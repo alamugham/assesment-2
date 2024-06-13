@@ -1,0 +1,50 @@
+# Thresholds (adjust as needed)
+CPU_THRESHOLD=80
+MEMORY_THRESHOLD=80
+DISK_THRESHOLD=80
+
+# Function to check CPU usage
+check_cpu() {
+    local cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
+    if (( $(echo "$cpu_usage > $CPU_THRESHOLD" | bc -l) )); then
+        echo "CPU usage is high: $cpu_usage%"
+    fi
+}
+
+# Function to check memory usage
+check_memory() {
+    local memory_usage=$(free | awk '/Mem/{printf "%.2f", $3/$2 * 100}')
+    if (( $(echo "$memory_usage > $MEMORY_THRESHOLD" | bc -l) )); then
+        echo "Memory usage is high: $memory_usage%"
+    fi
+}
+
+# Function to check disk space
+check_disk() {
+    local disk_usage=$(df -h | awk '$NF=="/"{print $5}' | sed 's/%//')
+    if (( $(echo "$disk_usage > $DISK_THRESHOLD" | bc -l) )); then
+        echo "Disk space is low: $disk_usage%"
+    fi
+}
+
+# Function to check running processes
+check_processes() {
+    local num_processes=$(ps aux | wc -l)
+    local max_processes=500  # Adjust as needed
+    if (( num_processes > max_processes )); then
+        echo "Number of running processes exceeds threshold: $num_processes"
+    fi
+}
+
+# Main function
+main() {
+    echo "Checking system health..."
+    check_cpu
+    check_memory
+    check_disk
+    check_processes
+    echo "Health check completed."
+}
+
+# Run the main function
+main
